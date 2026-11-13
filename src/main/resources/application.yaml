@@ -52,6 +52,7 @@ fluxnova.tokenomics:
   currency: USD
   use-case-map:
     LoanApprovalProcess_AI: loan-approval
+    AfcInvestigation_AI: aml-alert-triage
   rates:
     - provider: openai
       model: gpt-5.4
