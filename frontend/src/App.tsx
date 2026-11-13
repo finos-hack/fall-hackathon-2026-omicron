@@ -14,6 +14,7 @@ import {
 import { CalmArchitectureVisualizer } from './CalmArchitectureVisualizer'
 import { FinosProjectsPanel } from './FinosProjectsPanel'
 import { LoanApprovalForm } from './LoanApprovalForm'
+import { AfcPanel } from './AfcPanel'
 import { ComplianceEvidenceReport } from './ComplianceEvidenceReport'
 import { HumanTaskInbox } from './HumanTaskInbox'
 import { ProcessStatusLog } from './ProcessStatusLog'
@@ -294,6 +295,7 @@ export default function App() {
               </div>
               <FinosProjectsPanel />
             </div>
+            <AfcPanel />
           </section>
         )}
 
