@@ -60,6 +60,11 @@ fluxnova.tokenomics:
       completion-per-1m: 15.00
       cache-input-per-1m: 0.25
       cache-write-per-1m: 0.0
+    # Local demo model: no API spend, token counts still tracked for governance
+    - provider: openai
+      model: qwen3
+      prompt-per-1m: 0.0
+      completion-per-1m: 0.0
     - provider: openai
       model: gpt-5.6-luna
       prompt-per-1m: 0.20
