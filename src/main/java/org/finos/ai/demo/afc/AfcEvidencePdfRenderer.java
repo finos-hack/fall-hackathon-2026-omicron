@@ -64,6 +64,7 @@ public class AfcEvidencePdfRenderer {
       addRow(controls, "mi-11 human feedback", "Human task UserTask_AfcComplianceReview");
       addRow(controls, "CALM architecture", "afc-alert-triage.calm.json");
       addRow(controls, "CCC crosswalk", "CCC.GenAI.CN01 (input), CN02 (output), CN07 (pinning), CN08 (QA)");
+      document.add(controls);
 
       document.close();
     } catch (Exception e) {

@@ -15,7 +15,7 @@ type AfcTask = {
 
 const HIGH_RISK = {
   alertId: 'AFC-1001',
-  customerId: 'CUST-88213',
+  customerId: 'CUST-88213-ACT-4111111111111111',
   customerSegment: 'retail',
   pep: true,
   sanctionsNearMatch: true,
