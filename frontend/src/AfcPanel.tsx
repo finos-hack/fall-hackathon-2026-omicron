@@ -242,6 +242,10 @@ export function AfcPanel() {
           {instanceId && (
             <p style={{ marginTop: '0.75rem' }}>
               <a href={`/api/afc/instances/${instanceId}/evidence.pdf`}>Download evidence pack (PDF)</a>
+              {' · '}
+              <a href="/architecture/afc-alert-triage.calm.json" target="_blank" rel="noreferrer">
+                View CALM architecture
+              </a>
             </p>
           )}
         </div>
