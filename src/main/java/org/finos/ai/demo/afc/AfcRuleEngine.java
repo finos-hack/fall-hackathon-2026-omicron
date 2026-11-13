@@ -8,6 +8,7 @@ package org.finos.ai.demo.afc;
  * downstream policy gate auditable and what bounds agent non-determinism in
  * the pipeline (FINOS AIGF mi-5 acceptance invariants depend on this).
  */
+@org.springframework.stereotype.Component
 public final class AfcRuleEngine {
 
   static final int STRUCTURING_POINTS = 35;

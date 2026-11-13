@@ -8,6 +8,7 @@ import java.util.Locale;
  * MORE human oversight, never less: that is the "bound non-determinism with
  * deterministic controls" property the governance story rests on.
  */
+@org.springframework.stereotype.Component
 public final class AfcPolicyMatrix {
 
   public static final int MANDATORY_REVIEW_THRESHOLD = 70;
