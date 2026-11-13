@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: AI Steel Thread Demo
+    orgId: 1
+    folder: AI Steel Thread Demo
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
