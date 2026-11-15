@@ -1,0 +1,80 @@
+{
+  "policy_id": "OMICRON_SYNTHETIC_AML_TRIAGE_001",
+  "version": "1.0.0",
+  "policy_type": "synthetic_internal_demo_policy",
+  "currency": "USD",
+  "lookback_hours": 24,
+  "rules": [
+    {
+      "id": "DEPOSIT_COUNT_REVIEW",
+      "title": "Repeated cash deposit pattern",
+      "metric": "deposit_count_24h",
+      "operator": "greater_than_or_equal",
+      "threshold": 3,
+      "points": 2,
+      "meaning": "A synthetic review factor only. It does not establish intent or wrongdoing."
+    },
+    {
+      "id": "DEPOSIT_VOLUME_REVIEW",
+      "title": "Cash deposit volume pattern",
+      "metric": "deposit_total_24h_usd",
+      "operator": "greater_than_or_equal",
+      "threshold": 18000,
+      "points": 3,
+      "meaning": "A synthetic review factor only. This amount is not a statutory threshold."
+    },
+    {
+      "id": "SCREENING_CANDIDATE_REVIEW",
+      "title": "Exact screening candidate match",
+      "metric": "screening_candidate_match",
+      "operator": "equals",
+      "expected": true,
+      "points": 5,
+      "meaning": "A candidate match needs human verification and is not a confirmed sanctions finding."
+    }
+  ],
+  "risk_bands": [
+    {"tier": "HIGH", "minimum_score": 5},
+    {"tier": "MEDIUM", "minimum_score": 2},
+    {"tier": "LOW", "minimum_score": 0}
+  ],
+  "human_controls": {
+    "review_required_for_every_alert": true,
+    "ai_can_set_priority": false,
+    "ai_can_close_alert": false,
+    "ai_can_file_report": false,
+    "allowed_human_dispositions": ["close_as_false_positive", "escalate", "request_information"]
+  },
+  "control_references": [
+    {
+      "id": "CCC.Core.CN04",
+      "title": "Log All Access and Changes",
+      "coverage": "partial_demo",
+      "evidence": "A synthetic human decision event is recorded without raw alert content."
+    },
+    {
+      "id": "CCC.Core.CN09",
+      "title": "Ensure Integrity of Access Logs",
+      "coverage": "partial_demo",
+      "evidence": "The decision record includes a SHA 256 digest and prior event digest."
+    }
+  ],
+  "framework_reference": {
+    "name": "FINOS AI Governance Framework use case 4: Anti Financial Crime Investigation",
+    "url": "https://github.com/finos/ai-governance-framework/blob/main/docs/_usecases/uc-4_anti-financial-crime-investigation.md",
+    "status": "draft"
+  },
+  "legal_context": [
+    {
+      "name": "31 U.S.C. 5324",
+      "url": "https://uscode.house.gov/us/usc/119-124/t31/s5324/",
+      "use": "Context only. The demo never infers intent to evade reporting from a transaction pattern."
+    },
+    {
+      "name": "Regulation (EU) 2024/1624",
+      "url": "https://eur-lex.europa.eu/eli/reg/2024/1624/oj",
+      "use": "Context only. No EU legal conclusion is made by this demonstration."
+    }
+  ],
+  "notice": "Thresholds, rules, points, samples, and risk bands are invented for this demonstration. They are not compliance advice or a bank policy."
+}

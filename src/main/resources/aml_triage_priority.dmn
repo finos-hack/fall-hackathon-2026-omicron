@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dmn:definitions xmlns:dmn="https://www.omg.org/spec/DMN/20191111/MODEL/"
+                  id="Definitions_OmicronTriage"
+                  name="Omicron synthetic AML priority"
+                  namespace="https://finos.org/hackathon/omicron/aml">
+  <dmn:decision id="amlTriagePriority" name="Deterministic triage priority">
+    <dmn:decisionTable id="amlTriagePriorityTable" hitPolicy="FIRST">
+      <dmn:input id="screeningMatchInput" label="Synthetic screening candidate match">
+        <dmn:inputExpression id="screeningMatchExpression" typeRef="boolean"><dmn:text>screeningCandidateMatch</dmn:text></dmn:inputExpression>
+      </dmn:input>
+      <dmn:input id="depositCountInput" label="Cash deposits in the synthetic window">
+        <dmn:inputExpression id="depositCountExpression" typeRef="integer"><dmn:text>depositCount24h</dmn:text></dmn:inputExpression>
+      </dmn:input>
+      <dmn:input id="depositVolumeInput" label="Cash deposit total in USD">
+        <dmn:inputExpression id="depositVolumeExpression" typeRef="number"><dmn:text>depositTotal24hUsd</dmn:text></dmn:inputExpression>
+      </dmn:input>
+      <dmn:output id="riskTierOutput" name="riskTier" label="Priority band" typeRef="string" />
+      <dmn:rule id="screeningCandidateRule">
+        <dmn:inputEntry><dmn:text>true</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:outputEntry><dmn:text>"HIGH"</dmn:text></dmn:outputEntry>
+      </dmn:rule>
+      <dmn:rule id="depositVolumeRule">
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>&gt;= 18000</dmn:text></dmn:inputEntry>
+        <dmn:outputEntry><dmn:text>"HIGH"</dmn:text></dmn:outputEntry>
+      </dmn:rule>
+      <dmn:rule id="depositCountRule">
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>&gt;= 3</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:outputEntry><dmn:text>"MEDIUM"</dmn:text></dmn:outputEntry>
+      </dmn:rule>
+      <dmn:rule id="defaultLowRule">
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:inputEntry><dmn:text>-</dmn:text></dmn:inputEntry>
+        <dmn:outputEntry><dmn:text>"LOW"</dmn:text></dmn:outputEntry>
+      </dmn:rule>
+    </dmn:decisionTable>
+  </dmn:decision>
+</dmn:definitions>

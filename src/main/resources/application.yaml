@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: omicron-fluxnova-triage
+  datasource:
+    url: jdbc:h2:mem:omicron;DB_CLOSE_DELAY=-1
+    driverClassName: org.h2.Driver
+    username: sa
+    password: sa
+
+fluxnova:
+  bpm:
+    test-user-setup:
+      enabled: false
+    generic-properties:
+      properties:
+        historyTimeToLive: P1D
+    authorization:
+      enabled: false
+  bpm.admin-user:
+    id: demo
+    password: demo

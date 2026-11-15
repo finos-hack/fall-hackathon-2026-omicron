@@ -1,0 +1,111 @@
+{
+  "$schema": "https://calm.finos.org/release/1.3/meta/calm.json",
+  "nodes": [
+    {
+      "unique-id": "transaction-monitoring",
+      "node-type": "service",
+      "name": "Transaction monitoring",
+      "description": "Provides a synthetic alert and evidence references to the triage workflow."
+    },
+    {
+      "unique-id": "omicron-triage-api",
+      "node-type": "service",
+      "name": "Omicron triage API",
+      "description": "Starts a Fluxnova process and returns its deterministic priority and investigator task."
+    },
+    {
+      "unique-id": "fluxnova-policy-engine",
+      "node-type": "service",
+      "name": "Fluxnova BPM engine",
+      "description": "Executes the BPMN process and DMN priority table."
+    },
+    {
+      "unique-id": "investigator-tasklist",
+      "node-type": "service",
+      "name": "Investigator task",
+      "description": "Holds every alert for a human decision before the process can finish."
+    },
+    {
+      "unique-id": "evidence-store",
+      "node-type": "database",
+      "name": "Evidence reference store",
+      "description": "Represents controlled source references. Sample records contain no customer data."
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "monitoring-to-triage",
+      "description": "Submits a synthetic alert for review.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "transaction-monitoring"},
+          "destination": {"node": "omicron-triage-api"}
+        }
+      },
+      "protocol": "HTTPS"
+    },
+    {
+      "unique-id": "triage-to-fluxnova",
+      "description": "Starts the BPMN process with only required synthetic variables.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "omicron-triage-api"},
+          "destination": {"node": "fluxnova-policy-engine"}
+        }
+      },
+      "protocol": "HTTP"
+    },
+    {
+      "unique-id": "fluxnova-to-investigator",
+      "description": "Creates a required investigator task for every alert.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "fluxnova-policy-engine"},
+          "destination": {"node": "investigator-tasklist"}
+        }
+      }
+    },
+    {
+      "unique-id": "triage-to-evidence",
+      "description": "Reads evidence references without storing raw case content in the demo.",
+      "relationship-type": {
+        "connects": {
+          "source": {"node": "omicron-triage-api"},
+          "destination": {"node": "evidence-store"}
+        }
+      },
+      "protocol": "HTTPS"
+    }
+  ],
+  "controls": {
+    "aml-governance-controls": {
+      "description": "Related FINOS controls and human oversight requirements. Coverage claims are limited to the local demonstration.",
+      "requirements": [
+        {
+          "requirement-url": "https://calm.finos.org/release/1.3/meta/control-requirement.json",
+          "config": {
+            "control-id": "CCC.Core.CN04",
+            "name": "Log All Access and Changes",
+            "description": "Partial demo coverage through a synthetic human decision event. Production access logging is not implemented."
+          }
+        },
+        {
+          "requirement-url": "https://calm.finos.org/release/1.3/meta/control-requirement.json",
+          "config": {
+            "control-id": "CCC.Core.CN09",
+            "name": "Ensure Integrity of Access Logs",
+            "description": "Partial demo coverage through a SHA 256 chained event record. A production log service is not implemented."
+          }
+        },
+        {
+          "requirement-url": "https://calm.finos.org/release/1.3/meta/control-requirement.json",
+          "config": {
+            "control-id": "AIGF_UC4_HUMAN_REVIEW",
+            "name": "Human disposition for every alert",
+            "description": "AI advice cannot set priority, close an alert, or file a report. The investigator task is required for every process path."
+          }
+        }
+      ]
+    }
+  }
+}
