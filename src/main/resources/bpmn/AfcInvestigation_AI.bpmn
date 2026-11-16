@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_AfcInvestigation"
+                  targetNamespace="http://bpmn.io/schema/bpmn"
+                  exporter="omicron-aml-steel-thread"
+                  exporterVersion="1.0.0">
+  <bpmn:process id="AfcInvestigation_AI" name="AML Alert Triage (AIGF UC-4)" isExecutable="true"
+                camunda:historyTimeToLive="30">
+
+    <bpmn:startEvent id="StartEvent_Afc" name="Alert received">
+      <bpmn:outgoing>Flow_Afc_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:sequenceFlow id="Flow_Afc_1" sourceRef="StartEvent_Afc" targetRef="ServiceTask_AfcPreScreen" />
+
+    <bpmn:serviceTask id="ServiceTask_AfcPreScreen" name="Deterministic pre-screen"
+                      camunda:delegateExpression="${afcPreScreenDelegate}">
+      <bpmn:documentation>Pure rule engine: deterministic risk score, no LLM involved.</bpmn:documentation>
+      <bpmn:incoming>Flow_Afc_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_2" sourceRef="ServiceTask_AfcPreScreen" targetRef="ServiceTask_AfcTriage" />
+
+    <bpmn:serviceTask id="ServiceTask_AfcTriage" name="AI: alert triage (advisory)"
+                      camunda:delegateExpression="${afcTriageDelegate}">
+      <bpmn:documentation>LLM triage on a PII-redacted payload (AIGF mi-1). Output is advisory only.</bpmn:documentation>
+      <bpmn:incoming>Flow_Afc_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_3" sourceRef="ServiceTask_AfcTriage" targetRef="ServiceTask_AfcGate" />
+
+    <bpmn:serviceTask id="ServiceTask_AfcGate" name="Deterministic policy gate"
+                      camunda:delegateExpression="${afcPolicyGateDelegate}">
+      <bpmn:documentation>Policy matrix: agent recommendation can add oversight, never remove it.</bpmn:documentation>
+      <bpmn:incoming>Flow_Afc_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_4" sourceRef="ServiceTask_AfcGate" targetRef="Gateway_AfcPolicy" />
+
+    <bpmn:exclusiveGateway id="Gateway_AfcPolicy" name="Required oversight" default="Flow_Afc_Mandatory">
+      <bpmn:incoming>Flow_Afc_4</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_Mandatory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Afc_Advisory</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Afc_Disagreement</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Afc_AutoClose</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:sequenceFlow id="Flow_Afc_Mandatory" name="mandatory review (default)"
+                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview" />
+
+    <bpmn:sequenceFlow id="Flow_Afc_Advisory" name="review with advisory"
+                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'REVIEW_WITH_ADVISORY'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Afc_Disagreement" name="review on disagreement"
+                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'REVIEW_ON_DISAGREEMENT'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_Afc_AutoClose" name="auto-close allowed"
+                       sourceRef="Gateway_AfcPolicy" targetRef="ServiceTask_AfcAutoClose">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'AUTO_CLOSE_ALLOWED'}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:userTask id="UserTask_AfcComplianceReview" name="Compliance officer review"
+                   camunda:candidateGroups="compliance">
+      <bpmn:documentation>AIGF mi-11 human feedback loop: decision, rationale, four-eyes reviewer.</bpmn:documentation>
+      <bpmn:incoming>Flow_Afc_Mandatory</bpmn:incoming>
+      <bpmn:incoming>Flow_Afc_Advisory</bpmn:incoming>
+      <bpmn:incoming>Flow_Afc_Disagreement</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_5</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_5" sourceRef="UserTask_AfcComplianceReview" targetRef="ServiceTask_AfcFinalize" />
+
+    <bpmn:serviceTask id="ServiceTask_AfcAutoClose" name="Auto-close (sampled)"
+                      camunda:delegateExpression="${afcAutoCloseDelegate}">
+      <bpmn:incoming>Flow_Afc_AutoClose</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_6</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_6" sourceRef="ServiceTask_AfcAutoClose" targetRef="ServiceTask_AfcFinalize" />
+
+    <bpmn:serviceTask id="ServiceTask_AfcFinalize" name="Finalize and record evidence"
+                      camunda:delegateExpression="${afcFinalizeDelegate}">
+      <bpmn:incoming>Flow_Afc_5</bpmn:incoming>
+      <bpmn:incoming>Flow_Afc_6</bpmn:incoming>
+      <bpmn:outgoing>Flow_Afc_7</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:sequenceFlow id="Flow_Afc_7" sourceRef="ServiceTask_AfcFinalize" targetRef="EndEvent_AfcClosed" />
+
+    <bpmn:endEvent id="EndEvent_AfcClosed" name="Alert dispositioned">
+      <bpmn:incoming>Flow_Afc_7</bpmn:incoming>
+    </bpmn:endEvent>
+
+  </bpmn:process>
+</bpmn:definitions>

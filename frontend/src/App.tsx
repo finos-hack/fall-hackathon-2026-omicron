@@ -14,6 +14,7 @@ import {
 import { CalmArchitectureVisualizer } from './CalmArchitectureVisualizer'
 import { FinosProjectsPanel } from './FinosProjectsPanel'
 import { LoanApprovalForm } from './LoanApprovalForm'
+import { AfcPanel } from './AfcPanel'
 import { ComplianceEvidenceReport } from './ComplianceEvidenceReport'
 import { HumanTaskInbox } from './HumanTaskInbox'
 import { ProcessStatusLog } from './ProcessStatusLog'
@@ -265,6 +266,11 @@ export default function App() {
               </button>
               .
             </p>
+            <p className="lede" style={{ fontSize: '0.8rem', opacity: 0.7 }}>
+              Running fully local with a text-only model? The Loan Approval demo needs a
+              vision-capable model for its ID-card step. The AML Alert Triage panel below runs end
+              to end with a text model.
+            </p>
             <div className="home-columns">
               <div className="use-case-catalog">
                 <p className="sample-preview-label">Use case catalog</p>
@@ -294,6 +300,7 @@ export default function App() {
               </div>
               <FinosProjectsPanel />
             </div>
+            <AfcPanel />
           </section>
         )}
 

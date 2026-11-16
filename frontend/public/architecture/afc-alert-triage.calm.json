@@ -1,0 +1,278 @@
+{
+  "$schema": "https://calm.finos.org/release/1.2/meta/calm.json",
+  "$id": "http://localhost:8090/calm/namespaces/finos/architectures/afc-alert-triage/versions/1.0.0",
+  "unique-id": "omicron-afc-alert-triage",
+  "name": "Omicron - AML Alert Triage Steel Thread",
+  "title": "Omicron - AML Alert Triage Steel Thread",
+  "description": "CALM architecture for the Omicron Track 2 submission: the FINOS AI Steel Thread pipeline applied to AML alert triage (AIGF UC-4). Fluxnova orchestrates a deterministic pre-screen, an advisory LLM triage step, and a deterministic policy gate that bounds agent non-determinism; AIGF mi-1/4/5/11 controls and FINOS Common Cloud Controls (CCC) GenAI controls are attached to the components that enforce them.",
+  "metadata": [
+    {
+      "finos-use-case": "uc-4_anti-financial-crime-investigation",
+      "finos-use-case-url": "https://github.com/finos/ai-governance-framework/blob/main/docs/_usecases/uc-4_anti-financial-crime-investigation.md",
+      "finos-ai-governance-catalog": "https://air-governance-framework.finos.org/",
+      "finos-common-cloud-controls": "https://ccc.finos.org/",
+      "process-definition-key": "AfcInvestigation_AI",
+      "application": "omicron-aml-steel-thread",
+      "runtime": "Java 21 / Spring Boot 4 / Fluxnova BPM 3",
+      "aigf-mitigations": ["mi-1", "mi-4", "mi-5", "mi-11"],
+      "aigf-risks": ["ri-1", "ri-4", "ri-7"],
+      "ccc-genai-controls": ["CCC.GenAI.CN01", "CCC.GenAI.CN02", "CCC.GenAI.CN07", "CCC.GenAI.CN08"],
+      "note": "The policy gate reads only rule-engine output (score) and a bounded agent recommendation; the agent can add human oversight but never remove it. Deterministic controls are unit-tested as invariants (see AfcRuleEngineTest)."
+    }
+  ],
+  "nodes": [
+    {
+      "unique-id": "afc-compliance-ops",
+      "node-type": "actor",
+      "name": "Compliance Operations",
+      "description": "Submits transaction-monitoring alerts for triage"
+    },
+    {
+      "unique-id": "afc-launch-ui",
+      "node-type": "ui",
+      "name": "Launch UI (AML Alert Triage)",
+      "description": "Submits alerts, shows rule hits, agent recommendation, and the deterministic gate decision"
+    },
+    {
+      "unique-id": "afc-api",
+      "node-type": "service",
+      "name": "AFC REST API",
+      "description": "Starts AfcInvestigation_AI instances, exposes status, human task completion, and the evidence PDF",
+      "controls": {
+        "human-feedback-loop": {
+          "description": "FINOS AIGF mi-11: compliance officer completes UserTask_AfcComplianceReview with a decision, rationale, and four-eyes reviewer.",
+          "aigf-mitigations": ["mi-11"],
+          "aigf-risks": ["ri-1", "ri-7"],
+          "requirements": [
+            {
+              "requirement-url": "https://ai-steel-thread.local/control-requirement/mi-11-human-feedback-loop",
+              "config": {
+                "control-id": "mi-11",
+                "name": "Human Feedback Loop for AI Systems",
+                "description": "Human review task for mandatory-review and review-with-advisory paths (FINOS AIGF mi-11).",
+                "bpmn-activity-id": "UserTask_AfcComplianceReview",
+                "decision-variable": "afcFinalDecision",
+                "form-ref": "afc_compliance_review"
+              }
+            }
+          ]
+        },
+        "acceptance-testing": {
+          "description": "FINOS AIGF mi-5: deterministic acceptance invariants (high-risk alerts never auto-close; agent cannot downgrade oversight).",
+          "aigf-mitigations": ["mi-5"],
+          "aigf-risks": ["ri-4"],
+          "requirements": [
+            {
+              "requirement-url": "https://ai-steel-thread.local/control-requirement/mi-5-system-acceptance-testing",
+              "config": {
+                "control-id": "mi-5",
+                "name": "System Acceptance Testing",
+                "description": "AfcRuleEngineTest asserts policy monotonicity across agent recommendations.",
+                "pass-rate-threshold": 1.0
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "fluxnova-engine",
+      "node-type": "system",
+      "name": "Fluxnova BPM Engine",
+      "description": "Orchestrates AfcInvestigation_AI: pre-screen, LLM triage, policy gate, human task, finalize",
+      "controls": {
+        "ai-system-observability": {
+          "description": "FINOS AIGF mi-4: token usage, audit metadata, and traces recorded per instance.",
+          "aigf-mitigations": ["mi-4"],
+          "aigf-risks": ["ri-1"],
+          "requirements": [
+            {
+              "requirement-url": "https://ai-steel-thread.local/control-requirement/mi-4-ai-system-observability",
+              "config": {
+                "control-id": "mi-4",
+                "name": "AI System Observability",
+                "description": "Records prompt/completion token counts and gate decisions in process variables and evidence pack."
+              }
+            }
+          ]
+        },
+        "model-version-pinning": {
+          "description": "FINOS CCC GenAI CN07: the inference endpoint and model identifier are pinned per deployment and recorded in the evidence pack.",
+          "ccc-controls": ["CCC.GenAI.CN07"],
+          "requirements": [
+            {
+              "requirement-url": "https://ccc.finos.org/catalogs/ai-ml/gen-ai#CCC.GenAI.CN07",
+              "config": {
+                "control-id": "CCC.GenAI.CN07",
+                "name": "Model Version Pinning",
+                "description": "Base URL and model name are fixed at deployment; evidence records the active model."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "afc-rule-engine",
+      "node-type": "service",
+      "name": "Deterministic Rule Engine",
+      "description": "Pure, LLM-free scoring: structuring, high-risk jurisdiction, velocity, sanctions near-match, PEP, round amounts",
+      "controls": {
+        "deterministic-policy": {
+          "description": "Policy AFC-3.2: score >= 70 mandatory review; >= 40 review with advisory; below, auto-close only when the agent agrees.",
+          "ccc-controls": ["CCC.GenAI.CN08"],
+          "requirements": [
+            {
+              "requirement-url": "https://ccc.finos.org/catalogs/ai-ml/gen-ai#CCC.GenAI.CN08",
+              "config": {
+                "control-id": "CCC.GenAI.CN08",
+                "name": "Quality Control and Red Teaming",
+                "description": "Deterministic policy invariants are exercised by unit tests and QA sampling of auto-closed alerts."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "afc-llm-endpoint",
+      "node-type": "system",
+      "name": "LLM Endpoint (OpenAI-compatible)",
+      "description": "Local llama.cpp server (or hosted provider) used for advisory triage only",
+      "controls": {
+        "ai-data-leakage-prevention": {
+          "description": "FINOS AIGF mi-1: long identifiers are redacted before the alert leaves the process; redaction count is recorded in the evidence pack.",
+          "aigf-mitigations": ["mi-1"],
+          "aigf-risks": ["ri-1"],
+          "ccc-controls": ["CCC.GenAI.CN01", "CCC.GenAI.CN02"],
+          "requirements": [
+            {
+              "requirement-url": "https://ai-steel-thread.local/control-requirement/mi-1-ai-data-leakage-prevention",
+              "config": {
+                "control-id": "mi-1",
+                "name": "AI Data Leakage Prevention",
+                "description": "AfcLlmTriageService redacts identifiers at the LLM egress boundary (FINOS AIGF mi-1).",
+                "strict": false
+              }
+            },
+            {
+              "requirement-url": "https://ccc.finos.org/catalogs/ai-ml/gen-ai#CCC.GenAI.CN01",
+              "config": {
+                "control-id": "CCC.GenAI.CN01",
+                "name": "Model Input Filtering and Sanitisation",
+                "description": "Alert payload is redacted and validated before being passed to the GenAI model."
+              }
+            },
+            {
+              "requirement-url": "https://ccc.finos.org/catalogs/ai-ml/gen-ai#CCC.GenAI.CN02",
+              "config": {
+                "control-id": "CCC.GenAI.CN02",
+                "name": "Model Output Filtering and Sanitisation",
+                "description": "Model output is parsed strictly; malformed or unrecognised output degrades to escalation."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "afc-compliance-officer",
+      "node-type": "actor",
+      "name": "Compliance Officer",
+      "description": "Reviews mandatory or advisory alerts, records decision and rationale (four-eyes)"
+    },
+    {
+      "unique-id": "afc-evidence-store",
+      "node-type": "data",
+      "name": "Evidence Store",
+      "description": "Per-instance evidence PDF: rule hits, agent rationale, gate decision, policy citation, control coverage"
+    },
+    {
+      "unique-id": "calm-hub",
+      "node-type": "system",
+      "name": "CALM Hub",
+      "description": "Stores and serves CALM architectures and control requirements"
+    },
+    {
+      "unique-id": "ccc-genai-catalog",
+      "node-type": "data",
+      "name": "FINOS Common Cloud Controls - GenAI catalog",
+      "description": "CCC.GenAI.CN01..CN08 controls mapped to AIGF threats upstream"
+    }
+  ],
+  "relationships": [
+    {
+      "unique-id": "afc-ecosystem-composition",
+      "description": "AML alert triage ecosystem: UI, API, Fluxnova engine, rule engine, LLM endpoint, evidence store",
+      "relationship-type": {
+        "composed-of": {
+          "container": "afc-alert-triage-ecosystem",
+          "nodes": [
+            "afc-launch-ui",
+            "afc-api",
+            "fluxnova-engine",
+            "afc-rule-engine",
+            "afc-llm-endpoint",
+            "afc-evidence-store"
+          ]
+        }
+      }
+    },
+    {
+      "unique-id": "ops-uses-ui",
+      "description": "Compliance operations submits alerts through the Launch UI",
+      "relationship-type": {
+        "interacts": { "actor": "afc-compliance-ops", "nodes": ["afc-launch-ui"] }
+      }
+    },
+    {
+      "unique-id": "officer-reviews-api",
+      "description": "Compliance officer completes human review tasks through the API",
+      "relationship-type": {
+        "interacts": { "actor": "afc-compliance-officer", "nodes": ["afc-api"] }
+      }
+    },
+    {
+      "unique-id": "api-starts-engine",
+      "description": "AFC API starts AfcInvestigation_AI instances on the Fluxnova engine",
+      "relationship-type": {
+        "connects": { "source": { "node": "afc-api" }, "destination": { "node": "fluxnova-engine" } }
+      }
+    },
+    {
+      "unique-id": "engine-uses-rule-engine",
+      "description": "Pre-screen delegate invokes the deterministic rule engine",
+      "relationship-type": {
+        "connects": { "source": { "node": "fluxnova-engine" }, "destination": { "node": "afc-rule-engine" } }
+      }
+    },
+    {
+      "unique-id": "engine-calls-llm",
+      "description": "Triage delegate calls the LLM endpoint with a redacted payload",
+      "relationship-type": {
+        "connects": { "source": { "node": "fluxnova-engine" }, "destination": { "node": "afc-llm-endpoint" } }
+      }
+    },
+    {
+      "unique-id": "engine-writes-evidence",
+      "description": "Evidence endpoint renders the per-instance governance pack",
+      "relationship-type": {
+        "connects": { "source": { "node": "fluxnova-engine" }, "destination": { "node": "afc-evidence-store" } }
+      }
+    },
+    {
+      "unique-id": "calm-hub-stores-architecture",
+      "description": "CALM Hub stores this architecture and the AIGF control requirements",
+      "relationship-type": {
+        "connects": { "source": { "node": "calm-hub" }, "destination": { "node": "afc-api" } }
+      }
+    },
+    {
+      "unique-id": "ccc-catalog-informs-controls",
+      "description": "CCC GenAI controls are attached to the LLM endpoint, rule engine, and orchestration nodes",
+      "relationship-type": {
+        "connects": { "source": { "node": "ccc-genai-catalog" }, "destination": { "node": "afc-llm-endpoint" } }
+      }
+    }
+  ]
+}

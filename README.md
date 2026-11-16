@@ -8,6 +8,70 @@ Applies the FINOS AI Steel Thread governance pipeline to a new use case: **AML a
 
 ---
 
+## What this fork adds (Track 2)
+
+- **New use case:** AML alert triage (FINOS AIGF [UC-4](https://github.com/finos/ai-governance-framework/blob/main/docs/_usecases/uc-4_anti-financial-crime-investigation.md)), process `AfcInvestigation_AI`.
+- **Deterministic policy gate:** a pure rule engine scores each alert; the agent's recommendation is advisory only. Policy AFC-3.2: score ≥ 70 → mandatory human review; ≥ 40 → review with advisory; below → auto-close only when the agent agrees.
+- **Tool-using triage agent:** the model may call three read-only investigation tools (customer profile, sanctions screening, transaction statistics). Tool calls are audited in the evidence pack (CCC.GenAI.CN06, least privilege).
+- **Acceptance-as-code:** `GET /api/afc/acceptance-tests` runs the deterministic invariants (high risk never auto-closes, agent cannot downgrade oversight, rule engine deterministic over 100 runs).
+- **Four FINOS projects in one pipeline:** Fluxnova (orchestration), CALM (architecture + controls), AIGF (mi-1/4/5/11), CCC (GenAI control catalog). Crosswalk: [docs/ccc-crosswalk.md](./docs/ccc-crosswalk.md).
+- **Evidence pack:** per-instance PDF with rule hits, agent rationale, gate decision, policy citation, reviewer, and control coverage.
+- **Runs fully local:** any OpenAI-compatible endpoint works; no paid API keys required.
+
+## Quickstart (local model, no Docker)
+
+```bash
+# 1. Plugin snapshot (see Dockerfile for the authoritative recipe)
+git clone --branch llm-token-usage https://github.com/finos/fluxnova-plugins.git
+cd fluxnova-plugins && mvn -B -N -DskipTests install
+cd agentic-subprocess && mvn -B -DskipTests install && cd ..
+
+# 2. App
+mvn -B -DskipTests package
+
+# 3. Local model (any OpenAI-compatible server; example uses llama.cpp)
+llama-server -m ~/models/Qwen3-8B-Q4_K_M.gguf --host 127.0.0.1 --port 8081 -c 16384 --jinja &
+
+java -jar target/ai-steel-thread-demo-1.0-SNAPSHOT.jar \
+  --spring.ai.openai.base-url=http://127.0.0.1:8081 \
+  --spring.ai.openai.api-key=local \
+  --spring.ai.openai.chat.options.model=qwen3
+
+# 4. UI
+cd frontend && npm ci && npm run dev   # http://localhost:5173
+```
+
+Open the UI, use the **AML Alert Triage** panel, and pick a preset (low / medium / high risk).
+
+## Demo script (5 minutes)
+
+1. **Problem (30 s):** AML teams drown in false positives; SAR deadlines and four-eyes review are non-negotiable.
+2. **Architecture (60 s):** CALM model, four FINOS projects, deterministic gate outside the agent.
+3. **Live run (2 min):** high-risk alert → agent says escalate → **MANDATORY_REVIEW**; medium alert → agent says close → policy still requires review; low alert → agent agrees close → auto-close.
+4. **Human review + evidence (60 s):** complete the compliance task, download the evidence PDF, show control coverage (mi-1/4/5/11, CCC CN01/02/07/08).
+5. **Close (30 s):** same pipeline as loan approval, new regulated use case, agent cannot reduce oversight.
+
+## Verified locally (2026-11-13)
+
+- `mvn -B -Dtest='AfcRuleEngineTest,AfcTriageParsingTest' test` → 13 tests pass (8 policy invariants, 5 parse-fallback cases).
+- `GET /api/afc/acceptance-tests` → 5/5 deterministic checks pass.
+- Live runs: score 85 → MANDATORY_REVIEW; score 50 with agent "close" → REVIEW_WITH_ADVISORY; score 0 with agent "close" → AUTO_CLOSE_ALLOWED.
+- Evidence PDF includes rule hits, agent tools used, policy citation, reviewer, and control coverage.
+- Tokenomics records each triage call (example: 1 call, 351 tokens, $0 local inference).
+
+## Rubric mapping
+
+| Category | Evidence |
+|---|---|
+| Ecosystem integration | Fluxnova BPMN + CALM + AIGF controls + CCC GenAI catalog, wired in one runtime and documented in `docs/ccc-crosswalk.md` |
+| Technical execution | Working POC, unit-tested invariants (`AfcRuleEngineTest`, `AfcTriageParsingTest`), live acceptance suite at `/api/afc/acceptance-tests`, live UI, evidence PDF |
+| Business value | AML alert triage, BSA/FinCEN context, four-eyes human review, audit-ready evidence |
+| Bonus (AI build velocity) | Built agent-first; local LLM inference; acceptance-as-code invariants |
+
+See [submit.md](./submit.md) for the full submission note.
+
+---
+
 ## Requirements
 
 - Java 21+

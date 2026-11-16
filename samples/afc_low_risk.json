@@ -1,0 +1,10 @@
+{
+  "alertId": "AFC-2002",
+  "customerId": "CUST-11770",
+  "customerSegment": "small-business",
+  "pep": false,
+  "sanctionsNearMatch": false,
+  "transactions": [
+    {"amount": 120, "timestamp": "2026-11-10T10:00:00Z", "channel": "CARD", "counterpartyCountry": "US"}
+  ]
+}
