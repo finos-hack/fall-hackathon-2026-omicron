@@ -1,59 +1,116 @@
-# {project name}
+# Omicron — AML Alert Triage Steel Thread
 
-**Hackathon Track:** {track name/number}
+**Hackathon Track:** 2 (Governance-as-Code)
 
-Short blurb about what your project does.
+**Team:** Saketh Cherukuri ([@ssaketh-ch](https://github.com/ssaketh-ch)) · Sai Sravan Cherukuri ([@saisravan909](https://github.com/saisravan909))
 
-## Installation
+Applies the FINOS AI Steel Thread governance pipeline to a new use case: **AML alert triage**, with a deterministic policy gate that bounds agent non-determinism. Based on the FINOS AI Steel Thread demo (see [UPSTREAM.md](./UPSTREAM.md)).
 
-OS X & Linux:
+---
 
-```sh
-npm install my-crazy-module --save
+## Requirements
+
+- Java 21+
+- Maven 3.9+
+- Node.js 20+ (for the launch UI)
+- Locally installed agentic plugins from [finos/fluxnova-plugins](https://github.com/finos/fluxnova-plugins) (`1.0.0-SNAPSHOT`) — or use Docker (builds the `llm-token-usage` branch automatically)
+- `OPENAI_API_KEY` for OpenAI document intelligence / agent LLM calls
+- `ANTHROPIC_API_KEY` for Anthropic (Claude) provider calls
+
+## Docker (full stack)
+
+Builds the app against `fluxnova-plugins` branch `llm-token-usage` (override with `PLUGINS_REF`), then runs API + Launch UI + Prometheus/Grafana/Tempo + CALM Hub.
+
+```bash
+cp .env.example .env
+# edit .env — set OPENAI_API_KEY and ANTHROPIC_API_KEY
+
+docker compose up --build
 ```
 
-Windows:
+| Service | URL |
+|---------|-----|
+| Launch UI | http://localhost:5173 |
+| API / Cockpit | http://localhost:8080 |
+| Grafana | http://localhost:3000 |
+| Prometheus | http://localhost:9090 |
+| CALM Hub | http://localhost:8090 |
 
-```sh
-edit autoexec.bat
+First build is slow (clones plugins + Maven download). Rebuild app only after code changes:
+
+```bash
+docker compose up --build app frontend
 ```
 
-## Usage example
+Pin plugins to a commit instead of the branch tip:
 
-A few motivating and useful examples of how your project can be used. Spice this up with code blocks and potentially screenshots / videos.
-
-## Development setup
-
-Describe how to install all development dependencies and how to run an automated test-suite of some kind. Potentially do this for multiple platforms.
-
-```sh
-make install
-npm test
+```bash
+PLUGINS_REF=<commit-sha> docker compose build app
 ```
 
-## Roadmap
+Observability-only (app running on the host) remains available via `observability/docker-compose.yml`.
 
-This project was built during a time-boxed FINOS hackathon. List below what you would like to achieve after the hackathon, if the project continues.
+## Build
 
-1. {Goal after the hackathon}
-2. {Goal after the hackathon}
+```bash
+# Install plugins locally first (from fluxnova-plugins / llm-token-usage):
+#   cd ../fluxnova-plugins/agentic-subprocess && mvn -DskipTests install
 
-## Contributing
-
-Coding agents should follow [AGENTS.md](./AGENTS.md), which requires a Developer Certificate of Origin sign-off on every commit.
-
-**All commits** must be signed with a DCO signature to avoid being flagged by the DCO Bot. This means that your commit log message must contain a line that looks like the following one, with your actual name and email address:
-
-```
-Signed-off-by: John Doe <john.doe@example.com>
+mvn clean package
 ```
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for more information.
+## Run
 
-## License
+```bash
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
+mvn spring-boot:run
+```
 
-Copyright 2026 FINOS
+`LoanApprovalProcess_AI` and the Fluxnova form `credit_approval_review` are auto-deployed from
+`src/main/resources/bpmn/` and `src/main/resources/forms/` on startup
+(`fluxnova.bpm.auto-deployment-enabled` + `deployment-resource-pattern` includes `*.form`).
+You can still redeploy from Fluxnova Modeler when iterating on the diagram or form.
 
-Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+### Launch UI (React)
 
-SPDX-License-Identifier: [Apache-2.0](https://spdx.org/licenses/Apache-2.0)
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 — choose **Loan Approval**, fill the form, then **Send**.
+
+The Vite dev server proxies `/api` to `http://localhost:8080`.
+
+### API (optional)
+
+```bash
+curl -X POST 'http://localhost:8080/api/demo/loan-approval/start' \
+  -H 'Content-Type: application/json' \
+  -d '{"requestedAmount":25000,"loanPurpose":"Car"}'
+```
+
+Legacy query-param endpoint: `POST /api/demo/loan-approval/start-with-sample-id`
+
+## Architecture (FINOS CALM)
+
+Machine-readable architecture for this loan-approval steel thread:
+
+[`architecture/loan-approval.calm.json`](architecture/loan-approval.calm.json)
+
+From the Launch UI use-case card, click **View CALM architecture** for an in-app React Flow canvas (same CALM nodes / relationships model as [CALM Hub](https://calm.finos.org/calm-hub/)). Optionally run Hub on port 8090 and open the official visualizer — see [`architecture/README.md`](architecture/README.md).
+
+```bash
+npx @finos/calm-cli validate \
+  -a architecture/loan-approval.calm.json \
+  -u architecture/url-to-local-file-mapping.json \
+  -f pretty
+```
+
+## Observability
+
+See `observability/README.md` for Prometheus / Grafana / Tempo via Docker Compose.
