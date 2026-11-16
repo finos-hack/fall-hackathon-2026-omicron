@@ -53,9 +53,10 @@ skip human review.
 
 ## What is real vs sample data
 
-- **Real, running code:** Fluxnova process, rule engine, LLM call to an
-  OpenAI-compatible endpoint, policy gate, human task completion, evidence
-  PDF, unit tests.
+- **Real, running code:** Fluxnova process, rule engine, tool-using triage agent
+  (read-only tools, every call recorded), policy gate, human task completion,
+  evidence PDF, unit tests, and the live acceptance suite at
+  `/api/afc/acceptance-tests`.
 - **Sample data:** the alert JSON files in `samples/` (synthetic customers and
   transactions). No production or customer data is used.
 - **Model:** a local Qwen3-8B via llama.cpp in the demo, or any hosted
@@ -83,7 +84,7 @@ OpenAI-compatible endpoint, `npm run dev`, open the AML Alert Triage panel.
 | Category | Evidence |
 |---|---|
 | Ecosystem integration | Four FINOS projects wired in one runtime; crosswalk in `docs/ccc-crosswalk.md`; controls attached in CALM |
-| Technical execution | Working end-to-end POC, UI, tests (`AfcRuleEngineTest`), evidence PDF |
+| Technical execution | Working end-to-end POC, tool-using triage agent, UI, tests (`AfcRuleEngineTest`, `AfcTriageParsingTest`), acceptance suite endpoint, evidence PDF |
 | Business value | Realistic regulated workflow, deterministic controls, audit trail |
 | Bonus: innovation & build velocity | Agent-assisted build, local inference (no data egress), acceptance-as-code invariants |
 

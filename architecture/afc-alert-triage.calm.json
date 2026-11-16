@@ -16,7 +16,7 @@
       "runtime": "Java 21 / Spring Boot 4 / Fluxnova BPM 3",
       "aigf-mitigations": ["mi-1", "mi-4", "mi-5", "mi-11"],
       "aigf-risks": ["ri-1", "ri-4", "ri-7"],
-      "ccc-genai-controls": ["CCC.GenAI.CN01", "CCC.GenAI.CN02", "CCC.GenAI.CN07", "CCC.GenAI.CN08"],
+      "ccc-genai-controls": ["CCC.GenAI.CN01", "CCC.GenAI.CN02", "CCC.GenAI.CN06", "CCC.GenAI.CN07", "CCC.GenAI.CN08"],
       "note": "The policy gate reads only rule-engine output (score) and a bounded agent recommendation; the agent can add human oversight but never remove it. Deterministic controls are unit-tested as invariants (see AfcRuleEngineTest)."
     }
   ],
@@ -135,6 +135,28 @@
       }
     },
     {
+      "unique-id": "afc-investigation-tools",
+      "node-type": "service",
+      "name": "Read-only investigation tools",
+      "description": "customerProfile, sanctionsScreening, transactionStats. Deterministic, side-effect free, and every call is recorded in the evidence pack.",
+      "controls": {
+        "least-privilege-tools": {
+          "description": "FINOS CCC GenAI CN06: the agent may call only read-only, allow-listed tools; no state-changing operations exist.",
+          "ccc-controls": ["CCC.GenAI.CN06"],
+          "requirements": [
+            {
+              "requirement-url": "https://ccc.finos.org/catalogs/ai-ml/gen-ai#CCC.GenAI.CN06",
+              "config": {
+                "control-id": "CCC.GenAI.CN06",
+                "name": "Least Privilege for Plugins",
+                "description": "Tool surface is allow-listed and read-only; invocations are audited in the evidence pack."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
       "unique-id": "afc-llm-endpoint",
       "node-type": "system",
       "name": "LLM Endpoint (OpenAI-compatible)",
@@ -212,6 +234,7 @@
             "afc-api",
             "fluxnova-engine",
             "afc-rule-engine",
+            "afc-investigation-tools",
             "afc-llm-endpoint",
             "afc-evidence-store"
           ]
@@ -251,6 +274,13 @@
       "description": "Triage delegate calls the LLM endpoint with a redacted payload",
       "relationship-type": {
         "connects": { "source": { "node": "fluxnova-engine" }, "destination": { "node": "afc-llm-endpoint" } }
+      }
+    },
+    {
+      "unique-id": "agent-uses-investigation-tools",
+      "description": "Triage agent calls only read-only investigation tools; every call is audited",
+      "relationship-type": {
+        "connects": { "source": { "node": "fluxnova-engine" }, "destination": { "node": "afc-investigation-tools" } }
       }
     },
     {
