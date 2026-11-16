@@ -21,10 +21,20 @@ public class AfcDemoController {
 
   private final AfcDemoService demoService;
   private final AfcEvidencePdfRenderer pdfRenderer;
+  private final AfcAcceptanceService acceptanceService;
 
-  public AfcDemoController(AfcDemoService demoService, AfcEvidencePdfRenderer pdfRenderer) {
+  public AfcDemoController(
+      AfcDemoService demoService,
+      AfcEvidencePdfRenderer pdfRenderer,
+      AfcAcceptanceService acceptanceService) {
     this.demoService = demoService;
     this.pdfRenderer = pdfRenderer;
+    this.acceptanceService = acceptanceService;
+  }
+
+  @GetMapping("/acceptance-tests")
+  public AfcAcceptanceService.Report acceptanceTests() {
+    return acceptanceService.run();
   }
 
   @PostMapping("/alerts")

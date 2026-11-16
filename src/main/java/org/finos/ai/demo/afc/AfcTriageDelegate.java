@@ -36,6 +36,8 @@ public class AfcTriageDelegate implements JavaDelegate {
     execution.setVariable("afcDlpRedactions", outcome.redactionCount());
     execution.setVariable("afcPromptTokens", outcome.promptTokens());
     execution.setVariable("afcCompletionTokens", outcome.completionTokens());
+    execution.setVariable("afcToolCalls", String.join(", ", outcome.toolCalls()));
+    execution.setVariable("afcParseMode", outcome.parseMode());
 
     TokenomicsService tokenomics = tokenomicsService.getIfAvailable();
     if (tokenomics != null) {

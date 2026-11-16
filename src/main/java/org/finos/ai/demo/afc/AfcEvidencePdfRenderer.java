@@ -44,6 +44,8 @@ public class AfcEvidencePdfRenderer {
       addRow(table, "Rule hits", str(variables, "afcRuleSummary"));
       addRow(table, "Agent recommendation (advisory)", str(variables, "afcAgentRecommendation"));
       addRow(table, "Agent rationale", str(variables, "afcAgentRationale"));
+      addRow(table, "Agent tools used", str(variables, "afcToolCalls"));
+      addRow(table, "Recommendation parse mode", str(variables, "afcParseMode"));
       addRow(table, "Policy path", str(variables, "afcPolicyPath"));
       addRow(table, "Policy citation", str(variables, "afcPolicyCitation"));
       addRow(table, "Gate rationale", str(variables, "afcGateRationale"));
@@ -60,10 +62,10 @@ public class AfcEvidencePdfRenderer {
       addRow(controls, "mi-4 observability", "Token usage: "
           + str(variables, "afcPromptTokens") + " prompt / "
           + str(variables, "afcCompletionTokens") + " completion");
-      addRow(controls, "mi-5 acceptance", "Deterministic gate invariants enforced by rule engine tests");
+      addRow(controls, "mi-5 acceptance", "Deterministic invariants exercised at /api/afc/acceptance-tests");
       addRow(controls, "mi-11 human feedback", "Human task UserTask_AfcComplianceReview");
       addRow(controls, "CALM architecture", "afc-alert-triage.calm.json");
-      addRow(controls, "CCC crosswalk", "CCC.GenAI.CN01 (input), CN02 (output), CN07 (pinning), CN08 (QA)");
+      addRow(controls, "CCC crosswalk", "CCC.GenAI.CN01/02/06/07/08 - input, output, tools, pinning, QA");
       document.add(controls);
 
       document.close();
