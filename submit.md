@@ -42,6 +42,18 @@ routing on its own. Our pipeline separates the two:
 The middle row is the point: a plausible agent recommendation still cannot
 skip human review.
 
+![High-risk alert](docs/images/aml-high-risk.png)
+
+*High-risk alert: deterministic score 85, agent opinion "escalate" (after calling the transaction-stats tool), and a red mandatory-review decision.*
+
+![Override moment](docs/images/aml-medium-override.png)
+
+*Medium-risk alert: the agent recommends closing, and policy still requires human review. This is the thesis in one screen.*
+
+![Evidence pack](docs/images/aml-evidence.png)
+
+*Per-instance evidence PDF: decision trail, tools used, policy citation, and control coverage.*
+
 ## FINOS projects in one pipeline
 
 | Project | Role | Where |
@@ -87,6 +99,11 @@ OpenAI-compatible endpoint, `npm run dev`, open the AML Alert Triage panel.
 | Technical execution | Working end-to-end POC, tool-using triage agent, UI, tests (`AfcRuleEngineTest`, `AfcTriageParsingTest`), acceptance suite endpoint, evidence PDF |
 | Business value | Realistic regulated workflow, deterministic controls, audit trail |
 | Bonus: innovation & build velocity | Agent-assisted build, local inference (no data egress), acceptance-as-code invariants |
+
+## Verification
+
+- CALM validation: `npx @finos/calm-cli validate -a architecture/afc-alert-triage.calm.json -u architecture/url-to-local-file-mapping.json` reports no errors and no warnings.
+- Fresh clone of `main`: app packages, 13 unit tests pass (`AfcRuleEngineTest`, `AfcTriageParsingTest`), and the frontend builds (`npm ci && npm run build`).
 
 ## Attribution
 

@@ -58,6 +58,8 @@ Open the UI, use the **AML Alert Triage** panel, and pick a preset (low / medium
 - Live runs: score 85 → MANDATORY_REVIEW; score 50 with agent "close" → REVIEW_WITH_ADVISORY; score 0 with agent "close" → AUTO_CLOSE_ALLOWED.
 - Evidence PDF includes rule hits, agent tools used, policy citation, reviewer, and control coverage.
 - Tokenomics records each triage call (example: 1 call, 351 tokens, $0 local inference).
+- CALM validation: `npx @finos/calm-cli validate -a architecture/afc-alert-triage.calm.json -u architecture/url-to-local-file-mapping.json` → 0 errors, 0 warnings.
+- Fresh clone of `main`: `mvn -DskipTests package`, 13 tests, and `npm ci && npm run build` all pass.
 
 ## Rubric mapping
 
