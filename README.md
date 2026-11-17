@@ -1,91 +1,182 @@
-# Omicron AML Alert Triage
+# Omicron — AML Alert Triage Steel Thread
 
-**FINOS Fall Hackathon 2026, Track 2**
+**Hackathon Track:** 2 (Governance-as-Code)
 
-Omicron is a synthetic anti money laundering alert triage demonstration. It connects a deterministic policy check, a FINOS CALM architecture, and a FINOS Fluxnova BPMN process. Every alert reaches an investigator task. The software assigns a queue priority only. A person records the case disposition.
+**Team:** Saketh Cherukuri ([@ssaketh-ch](https://github.com/ssaketh-ch)) · Sai Sravan Cherukuri ([@saisravan909](https://github.com/saisravan909))
 
-## Demonstration boundaries
+Applies the FINOS AI Steel Thread governance pipeline to a new use case: **AML alert triage**, with a deterministic policy gate that bounds agent non-determinism. Based on the FINOS AI Steel Thread demo (see [UPSTREAM.md](./UPSTREAM.md)).
 
-All cases and thresholds are invented for this demonstration. The screening match is a synthetic input, not a match against a real sanctions or watch list. The optional advisory in one fixture is static text. No model is called. The software does not decide that activity is suspicious, determine whether a report is required, or file a report. A deposit pattern alone does not establish intent under 31 U.S.C. 5324.
+---
 
-The FINOS AI Governance Framework anti financial crime investigation use case is marked draft. Omicron follows its human accountability boundary: an AI or rule output can inform an investigator, while an authorized person retains responsibility for disposition. The demonstration does not make a legal or compliance determination.
+## What this fork adds (Track 2)
 
-## Run the checks
+- **New use case:** AML alert triage (FINOS AIGF [UC-4](https://github.com/finos/ai-governance-framework/blob/main/docs/_usecases/uc-4_anti-financial-crime-investigation.md)), process `AfcInvestigation_AI`.
+- **Deterministic policy gate:** a pure rule engine scores each alert; the agent's recommendation is advisory only. Policy AFC-3.2: score ≥ 70 → mandatory human review; ≥ 40 → review with advisory; below → an investigator still records the disposition.
+- **Tool-using triage agent:** the model may call three read-only investigation tools (customer profile, sanctions screening, transaction statistics). Tool calls are audited in the evidence pack (CCC.GenAI.CN06, least privilege).
+- **Acceptance-as-code:** `GET /api/afc/acceptance-tests` checks that every score band requires human review, agent output cannot close an alert, and the rule engine returns the same result across 100 runs.
+- **Four FINOS projects in one pipeline:** Fluxnova (orchestration), CALM (architecture + controls), AIGF (mi-1/4/5/11), CCC (GenAI control catalog). Crosswalk: [docs/ccc-crosswalk.md](./docs/ccc-crosswalk.md).
+- **Evidence pack:** per-instance PDF with rule hits, agent rationale, gate decision, policy citation, reviewer, and control coverage.
+- **Runs fully local:** any OpenAI-compatible endpoint works; no paid API keys required.
 
-Requirements: Python 3.9 or newer, Node.js 22.13 or newer, Java 21, and Maven 3.9 or newer.
+## Quickstart (local model, no Docker)
 
-```sh
-bash scripts/demo.sh
+```bash
+# 1. Plugin snapshot (see Dockerfile for the authoritative recipe)
+git clone --branch llm-token-usage https://github.com/finos/fluxnova-plugins.git
+cd fluxnova-plugins && mvn -B -N -DskipTests install
+cd agentic-subprocess && mvn -B -DskipTests install && cd ..
+
+# 2. App
+mvn -B -DskipTests package
+
+# 3. Local model (any OpenAI-compatible server; example uses llama.cpp)
+llama-server -m ~/models/Qwen3-8B-Q4_K_M.gguf --host 127.0.0.1 --port 8081 -c 16384 --jinja &
+
+java -jar target/ai-steel-thread-demo-1.0-SNAPSHOT.jar \
+  --spring.ai.openai.base-url=http://127.0.0.1:8081 \
+  --spring.ai.openai.api-key=local \
+  --spring.ai.openai.chat.options.model=qwen3
+
+# 4. UI
+cd frontend && npm ci && npm run dev   # http://localhost:5173
 ```
 
-The command checks that the DMN thresholds match the versioned synthetic policy, runs the Python policy and workflow checks, exercises low, medium, and high sample alerts, validates the architecture with the official FINOS CALM CLI, and runs the Java integration tests against Fluxnova.
+Open the UI, use the **AML Alert Triage** panel, and pick a preset (low / medium / high risk).
 
-The Java integration tests confirm that high and low priority cases both stop at the investigator task. A low queue priority never closes an alert automatically.
+## Demo script (5 minutes)
 
-## Run the Fluxnova service
+1. **Problem (30 s):** AML teams drown in false positives; SAR deadlines and four-eyes review are non-negotiable.
+2. **Architecture (60 s):** CALM model, four FINOS projects, deterministic gate outside the agent.
+3. **Live run (2 min):** high risk → mandatory review; medium risk → agent says close, policy still requires review; low risk → agent says close, investigator still records the disposition.
+4. **Human review + evidence (60 s):** complete the compliance task, download the evidence PDF, show control coverage (mi-1/4/5/11, CCC CN01/02/07/08).
+5. **Close (30 s):** same pipeline as loan approval, new regulated use case, agent cannot reduce oversight.
 
-From the repository root:
+## Verified locally (2026-11-13)
 
-```sh
+- `mvn -B -Dtest='AfcRuleEngineTest,AfcTriageParsingTest' test` → 13 tests pass (8 policy invariants, 5 parse-fallback cases).
+- `GET /api/afc/acceptance-tests` → 5/5 deterministic checks pass.
+- Live runs: score 85 → MANDATORY_REVIEW; score 50 with agent "close" → REVIEW_WITH_ADVISORY; score 0 with agent "close" → HUMAN_REVIEW_REQUIRED.
+- Evidence PDF includes rule hits, agent tools used, policy citation, reviewer, and control coverage.
+- Tokenomics records each triage call (example: 1 call, 351 tokens, $0 local inference).
+- CALM validation: `npx @finos/calm-cli validate -a architecture/afc-alert-triage.calm.json -u architecture/url-to-local-file-mapping.json` → 0 errors, 0 warnings.
+- Fresh clone of `main`: `mvn -DskipTests package`, 13 tests, and `npm ci && npm run build` all pass.
+
+## Rubric mapping
+
+| Category | Evidence |
+|---|---|
+| Ecosystem integration | Fluxnova BPMN + CALM + AIGF controls + CCC GenAI catalog, wired in one runtime and documented in `docs/ccc-crosswalk.md` |
+| Technical execution | Working POC, unit-tested invariants (`AfcRuleEngineTest`, `AfcTriageParsingTest`), live acceptance suite at `/api/afc/acceptance-tests`, live UI, evidence PDF |
+| Business value | AML alert triage, BSA/FinCEN context, four-eyes human review, audit-ready evidence |
+| Bonus (AI build velocity) | Built agent-first; local LLM inference; acceptance-as-code invariants |
+
+See [submit.md](./submit.md) for the full submission note.
+
+---
+
+## Requirements
+
+- Java 21+
+- Maven 3.9+
+- Node.js 20+ (for the launch UI)
+- Locally installed agentic plugins from [finos/fluxnova-plugins](https://github.com/finos/fluxnova-plugins) (`1.0.0-SNAPSHOT`) — or use Docker (builds the `llm-token-usage` branch automatically)
+- `OPENAI_API_KEY` for OpenAI document intelligence / agent LLM calls
+- `ANTHROPIC_API_KEY` for Anthropic (Claude) provider calls
+
+## Docker (full stack)
+
+Builds the app against `fluxnova-plugins` branch `llm-token-usage` (override with `PLUGINS_REF`), then runs API + Launch UI + Prometheus/Grafana/Tempo + CALM Hub.
+
+```bash
+cp .env.example .env
+# edit .env — set OPENAI_API_KEY and ANTHROPIC_API_KEY
+
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Launch UI | http://localhost:5173 |
+| API / Cockpit | http://localhost:8080 |
+| Grafana | http://localhost:3000 |
+| Prometheus | http://localhost:9090 |
+| CALM Hub | http://localhost:8090 |
+
+First build is slow (clones plugins + Maven download). Rebuild app only after code changes:
+
+```bash
+docker compose up --build app frontend
+```
+
+Pin plugins to a commit instead of the branch tip:
+
+```bash
+PLUGINS_REF=<commit-sha> docker compose build app
+```
+
+Observability-only (app running on the host) remains available via `observability/docker-compose.yml`.
+
+## Build
+
+```bash
+# Install plugins locally first (from fluxnova-plugins / llm-token-usage):
+#   cd ../fluxnova-plugins/agentic-subprocess && mvn -DskipTests install
+
+mvn clean package
+```
+
+## Run
+
+```bash
+export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...
 mvn spring-boot:run
 ```
 
-The local service uses an in memory H2 database and has authentication disabled for this synthetic demonstration. Do not expose it to a network or use real customer data.
+`LoanApprovalProcess_AI` and the Fluxnova form `credit_approval_review` are auto-deployed from
+`src/main/resources/bpmn/` and `src/main/resources/forms/` on startup
+(`fluxnova.bpm.auto-deployment-enabled` + `deployment-resource-pattern` includes `*.form`).
+You can still redeploy from Fluxnova Modeler when iterating on the diagram or form.
 
-Check readiness:
+### Launch UI (React)
 
-```sh
-curl http://127.0.0.1:8080/api/health
+In a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-Start a synthetic case:
+Open http://localhost:5173 — choose **Loan Approval**, fill the form, then **Send**.
 
-```sh
-curl -X POST http://127.0.0.1:8080/api/triage \
+The Vite dev server proxies `/api` to `http://localhost:8080`.
+
+### API (optional)
+
+```bash
+curl -X POST 'http://localhost:8080/api/demo/loan-approval/start' \
   -H 'Content-Type: application/json' \
-  -d '{"caseId":"SYNTHETIC-001","depositCount24h":4,"depositTotal24hUsd":20000,"screeningCandidateMatch":false,"inputSha256":"e41b2fc8d99a"}'
+  -d '{"requestedAmount":25000,"loanPurpose":"Car"}'
 ```
 
-The response contains the queue priority and investigator task identifier. Record a human disposition by replacing `TASK_ID` with the returned task identifier:
+Legacy query-param endpoint: `POST /api/demo/loan-approval/start-with-sample-id`
 
-```sh
-curl -X POST http://127.0.0.1:8080/api/triage/tasks/TASK_ID/review \
-  -H 'Content-Type: application/json' \
-  -d '{"reviewerId":"investigator-1","disposition":"escalate"}'
+## Architecture (FINOS CALM)
+
+Machine-readable architecture for this loan-approval steel thread:
+
+[`architecture/loan-approval.calm.json`](architecture/loan-approval.calm.json)
+
+From the Launch UI use-case card, click **View CALM architecture** for an in-app React Flow canvas (same CALM nodes / relationships model as [CALM Hub](https://calm.finos.org/calm-hub/)). Optionally run Hub on port 8090 and open the official visualizer — see [`architecture/README.md`](architecture/README.md).
+
+```bash
+npx @finos/calm-cli validate \
+  -a architecture/loan-approval.calm.json \
+  -u architecture/url-to-local-file-mapping.json \
+  -f pretty
 ```
 
-Supported human dispositions are `close_as_false_positive`, `escalate`, and `request_information`. Report filing is outside the demonstration.
+## Observability
 
-## FINOS integration and rubric map
-
-| Hackathon criterion | Demonstration |
-| --- | --- |
-| FINOS ecosystem integration | FINOS Fluxnova runs the BPMN process and DMN decision. The architecture uses FINOS CALM and maps related controls from Common Cloud Controls. The governance boundary references AIGF use case 4. |
-| Functional proof of concept | Python scenarios and Java integration tests show priority calculation, a waiting investigator task, and human disposition. |
-| Financial services value | The workflow makes a synthetic alert queue more consistent while preserving investigator accountability. |
-| Bounded non determinism | No model is called. A static conflicting advisory fixture is ignored by the deterministic policy. |
-| Emerging technology | The sample combines CALM architecture as code with a BPMN and DMN runtime. |
-
-The CALM architecture maps `CCC.Core.CN04` to access and change logging and `CCC.Core.CN09` to log integrity as partial relationships. These mappings identify areas for production evidence. They do not certify that this sample implements either control completely. The AIGF use case is a draft.
-
-## Project layout
-
-* `policy/aml_triage_policy.json` contains the synthetic policy and boundaries.
-* `src/omicron/triage.py` evaluates the sample alerts and records human disposition events.
-* `fluxnova/aml_alert_triage.bpmn` and `fluxnova/aml_triage_priority.dmn` define the orchestration and priority decision.
-* `src/main/java/` exposes a small REST interface to the Fluxnova runtime.
-* `calm/architecture/aml_alert_triage.architecture.json` describes the integrated system.
-* `examples/alerts/` contains fictional sample cases.
-* `tests/` checks the policy, process model, and control mappings.
-
-## Sources
-
-* [FINOS AI Governance Framework, anti financial crime investigation](https://github.com/finos/ai-governance-framework/blob/main/docs/_usecases/uc-4_anti-financial-crime-investigation.md)
-* [FINOS Fluxnova](https://github.com/finos/fluxnova-bpm-platform)
-* [FINOS CALM schema](https://github.com/finos/calm-schema)
-* [FINOS Common Cloud Controls](https://github.com/finos/common-cloud-controls)
-* [31 U.S.C. 5324, official United States Code](https://uscode.house.gov/us/usc/119-124/t31/s5324/)
-
-## License
-
-Copyright 2026 FINOS. Distributed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
+See `observability/README.md` for Prometheus / Grafana / Tempo via Docker Compose.

@@ -1,0 +1,12 @@
+{
+  "alertId": "AFC-1001",
+  "customerId": "CUST-88213-ACT-4111111111111111",
+  "customerSegment": "retail",
+  "pep": true,
+  "sanctionsNearMatch": true,
+  "transactions": [
+    {"amount": 9500, "timestamp": "2026-11-10T09:00:00Z", "channel": "CASH", "counterpartyCountry": "US"},
+    {"amount": 9600, "timestamp": "2026-11-10T11:00:00Z", "channel": "CASH", "counterpartyCountry": "US"},
+    {"amount": 9700, "timestamp": "2026-11-10T13:00:00Z", "channel": "CASH", "counterpartyCountry": "US"}
+  ]
+}
