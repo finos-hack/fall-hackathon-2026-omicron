@@ -30,7 +30,7 @@ PDF proves what happened.
 | Number | Who produces it | Can it be argued with? |
 |---|---|---|
 | Rule score (0-100) | Pure Java rule engine: structuring, high-risk country, velocity, sanctions near-match, PEP, round amounts | No. Same alert, same score, every time. |
-| Agent opinion (close/escalate) | The local LLM, on a redacted copy of the alert | Yes. It is advice. It can add oversight, never remove it. |
+| Agent opinion (close/escalate) | The local LLM, on a redacted copy of the alert | No. It is recorded as evidence and never changes routing. |
 | Policy decision | A fixed matrix: score 70+ = mandatory review; 40-69 = review with advice; below = investigator disposition still required | No. This is the control. |
 | Tool calls | The agent may call three read-only tools (customer profile, sanctions, transaction stats) | Yes, but it cannot change anything; every call is logged |
 | Acceptance | Five deterministic invariants checked live at `/api/afc/acceptance-tests` | No. Green means the guarantees hold. |
