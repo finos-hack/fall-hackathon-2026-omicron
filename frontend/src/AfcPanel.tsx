@@ -78,17 +78,11 @@ const PATH_META: Record<string, PathMeta> = {
     bg: '#fef3c7',
     blurb: 'Rule score is between 40 and 69. The agent opinion is attached but cannot decide.',
   },
-  REVIEW_ON_DISAGREEMENT: {
-    label: 'Human review (agent disagreed)',
+  HUMAN_REVIEW_REQUIRED: {
+    label: 'Human review required',
     fg: '#92400e',
     bg: '#fef3c7',
-    blurb: 'Low rule score, but the agent did not agree to close. Disagreement always escalates.',
-  },
-  AUTO_CLOSE_ALLOWED: {
-    label: 'Auto-close allowed (sampled)',
-    fg: '#065f46',
-    bg: '#d1fae5',
-    blurb: 'Low rule score and the agent agreed to close. The alert is sampled for QA.',
+    blurb: 'Low rule score does not close a case. An investigator records every disposition.',
   },
 }
 
@@ -121,8 +115,7 @@ export function AfcPanel() {
   const ruleScore = vars.afcRuleScore as number | undefined
   const pathMeta = pathMetaFor(gatePath)
   const agentWantedClose = agentRec === 'close'
-  const overrideMoment =
-    agentWantedClose && gatePath !== undefined && gatePath !== 'AUTO_CLOSE_ALLOWED'
+  const overrideMoment = agentWantedClose && gatePath !== undefined
   const openTask = useMemo(
     () => tasks.find((task) => task.processInstanceId === instanceId),
     [tasks, instanceId],
@@ -225,9 +218,9 @@ export function AfcPanel() {
         <p className="eyebrow">Track 2 · Governance-as-Code</p>
         <h2>AML Alert Triage (AIGF UC-4)</h2>
         <p className="panel-copy">
-          A second regulated use case on the steel thread pipeline. The model gives an opinion; a
-          deterministic rule engine and policy matrix decide what happens. The agent can add human
-          oversight but never remove it.
+          A second regulated use case on the steel thread pipeline. The model gives an opinion, but
+          the risk score only labels the review path. Every alert waits for an investigator
+          disposition.
         </p>
       </div>
 
@@ -242,7 +235,7 @@ export function AfcPanel() {
         {[
           ['1. Rules score the alert', 'Pure Java, no model. Same input, same score.'],
           ['2. Model gives an opinion', 'Advisory only. It sees a redacted alert.'],
-          ['3. Policy decides', 'The gate reads the score, not the model. Humans review when required.'],
+          ['3. Policy decides', 'The gate reads the score, not the model. Every case waits for an investigator.'],
         ].map(([title, detail]) => (
           <div
             key={title}

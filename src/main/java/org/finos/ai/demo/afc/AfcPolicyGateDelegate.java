@@ -5,9 +5,8 @@ import org.finos.fluxnova.bpm.engine.delegate.JavaDelegate;
 import org.springframework.stereotype.Component;
 
 /**
- * Applies the deterministic policy matrix to (rule score, agent recommendation)
- * and writes the routing path. This is the control that bounds agent
- * non-determinism: the agent can add human oversight but never remove it.
+ * Applies the deterministic policy matrix to the rule score and writes the
+ * review path. Agent output is recorded separately and never affects routing.
  */
 @Component("afcPolicyGateDelegate")
 public class AfcPolicyGateDelegate implements JavaDelegate {

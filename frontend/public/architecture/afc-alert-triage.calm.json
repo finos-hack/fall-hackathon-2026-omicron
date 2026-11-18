@@ -17,7 +17,7 @@
       "aigf-mitigations": ["mi-1", "mi-4", "mi-5", "mi-11"],
       "aigf-risks": ["ri-1", "ri-4", "ri-7"],
       "ccc-genai-controls": ["CCC.GenAI.CN01", "CCC.GenAI.CN02", "CCC.GenAI.CN07", "CCC.GenAI.CN08"],
-      "note": "The policy gate reads only rule-engine output (score) and a bounded agent recommendation; the agent can add human oversight but never remove it. Deterministic controls are unit-tested as invariants (see AfcRuleEngineTest)."
+      "note": "The policy gate uses the rule score only to label the review path. Agent output cannot affect routing, and every alert requires an investigator disposition. Deterministic controls are unit-tested as invariants (see AfcRuleEngineTest)."
     }
   ],
   "nodes": [
@@ -58,7 +58,7 @@
           ]
         },
         "acceptance-testing": {
-          "description": "FINOS AIGF mi-5: deterministic acceptance invariants (high-risk alerts never auto-close; agent cannot downgrade oversight).",
+          "description": "FINOS AIGF mi-5: deterministic acceptance invariants require an investigator disposition for every alert.",
           "aigf-mitigations": ["mi-5"],
           "aigf-risks": ["ri-4"],
           "requirements": [
@@ -119,7 +119,7 @@
       "description": "Pure, LLM-free scoring: structuring, high-risk jurisdiction, velocity, sanctions near-match, PEP, round amounts",
       "controls": {
         "deterministic-policy": {
-          "description": "Policy AFC-3.2: score >= 70 mandatory review; >= 40 review with advisory; below, auto-close only when the agent agrees.",
+          "description": "Policy AFC-3.2: score >= 70 mandatory review; >= 40 review with advisory; below, investigator disposition is still required.",
           "ccc-controls": ["CCC.GenAI.CN08"],
           "requirements": [
             {
@@ -127,7 +127,7 @@
               "config": {
                 "control-id": "CCC.GenAI.CN08",
                 "name": "Quality Control and Red Teaming",
-                "description": "Deterministic policy invariants are exercised by unit tests and QA sampling of auto-closed alerts."
+                "description": "Deterministic policy invariants are exercised by unit tests and require human review at every score band."
               }
             }
           ]

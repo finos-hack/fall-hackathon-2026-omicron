@@ -40,57 +40,21 @@
       <bpmn:outgoing>Flow_Afc_4</bpmn:outgoing>
     </bpmn:serviceTask>
 
-    <bpmn:sequenceFlow id="Flow_Afc_4" sourceRef="ServiceTask_AfcGate" targetRef="Gateway_AfcPolicy" />
-
-    <bpmn:exclusiveGateway id="Gateway_AfcPolicy" name="Required oversight" default="Flow_Afc_Mandatory">
-      <bpmn:incoming>Flow_Afc_4</bpmn:incoming>
-      <bpmn:outgoing>Flow_Afc_Mandatory</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Afc_Advisory</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Afc_Disagreement</bpmn:outgoing>
-      <bpmn:outgoing>Flow_Afc_AutoClose</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-
-    <bpmn:sequenceFlow id="Flow_Afc_Mandatory" name="mandatory review (default)"
-                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview" />
-
-    <bpmn:sequenceFlow id="Flow_Afc_Advisory" name="review with advisory"
-                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'REVIEW_WITH_ADVISORY'}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_Afc_Disagreement" name="review on disagreement"
-                       sourceRef="Gateway_AfcPolicy" targetRef="UserTask_AfcComplianceReview">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'REVIEW_ON_DISAGREEMENT'}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-
-    <bpmn:sequenceFlow id="Flow_Afc_AutoClose" name="auto-close allowed"
-                       sourceRef="Gateway_AfcPolicy" targetRef="ServiceTask_AfcAutoClose">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${afcPolicyPath == 'AUTO_CLOSE_ALLOWED'}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Afc_4" name="human disposition required"
+                       sourceRef="ServiceTask_AfcGate" targetRef="UserTask_AfcComplianceReview" />
 
     <bpmn:userTask id="UserTask_AfcComplianceReview" name="Compliance officer review"
                    camunda:candidateGroups="compliance">
       <bpmn:documentation>AIGF mi-11 human feedback loop: decision, rationale, four-eyes reviewer.</bpmn:documentation>
-      <bpmn:incoming>Flow_Afc_Mandatory</bpmn:incoming>
-      <bpmn:incoming>Flow_Afc_Advisory</bpmn:incoming>
-      <bpmn:incoming>Flow_Afc_Disagreement</bpmn:incoming>
+      <bpmn:incoming>Flow_Afc_4</bpmn:incoming>
       <bpmn:outgoing>Flow_Afc_5</bpmn:outgoing>
     </bpmn:userTask>
 
     <bpmn:sequenceFlow id="Flow_Afc_5" sourceRef="UserTask_AfcComplianceReview" targetRef="ServiceTask_AfcFinalize" />
 
-    <bpmn:serviceTask id="ServiceTask_AfcAutoClose" name="Auto-close (sampled)"
-                      camunda:delegateExpression="${afcAutoCloseDelegate}">
-      <bpmn:incoming>Flow_Afc_AutoClose</bpmn:incoming>
-      <bpmn:outgoing>Flow_Afc_6</bpmn:outgoing>
-    </bpmn:serviceTask>
-
-    <bpmn:sequenceFlow id="Flow_Afc_6" sourceRef="ServiceTask_AfcAutoClose" targetRef="ServiceTask_AfcFinalize" />
-
     <bpmn:serviceTask id="ServiceTask_AfcFinalize" name="Finalize and record evidence"
                       camunda:delegateExpression="${afcFinalizeDelegate}">
       <bpmn:incoming>Flow_Afc_5</bpmn:incoming>
-      <bpmn:incoming>Flow_Afc_6</bpmn:incoming>
       <bpmn:outgoing>Flow_Afc_7</bpmn:outgoing>
     </bpmn:serviceTask>
 

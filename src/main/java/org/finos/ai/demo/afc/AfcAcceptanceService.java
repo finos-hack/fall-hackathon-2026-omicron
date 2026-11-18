@@ -35,7 +35,7 @@ public class AfcAcceptanceService {
     AfcAlert highRisk = highRiskAlert();
     AfcPreScreenResult high = ruleEngine.screen(highRisk);
     checks.add(check(
-        "high-risk-never-auto-closes",
+        "high-risk-requires-human-review",
         "A high-risk alert (score >= 70) must route to human review even when the agent recommends closing",
         high.score() >= 70
             && policyMatrix.decide(high.score(), "close") == AfcPolicyPath.MANDATORY_REVIEW
@@ -56,18 +56,21 @@ public class AfcAcceptanceService {
     AfcAlert lowRisk = lowRiskAlert();
     AfcPreScreenResult low = ruleEngine.screen(lowRisk);
     checks.add(check(
-        "low-risk-agent-agreement-auto-closes",
-        "A low-risk alert may auto-close only when the agent also recommends closing",
+        "low-risk-always-requires-human-review",
+        "A low-risk alert still requires an investigator disposition when the agent recommends closing",
         low.score() < 40
-            && policyMatrix.decide(low.score(), "close") == AfcPolicyPath.AUTO_CLOSE_ALLOWED,
+            && policyMatrix.decide(low.score(), "close") == AfcPolicyPath.HUMAN_REVIEW_REQUIRED,
         "score=" + low.score() + ", agent=close -> "
             + policyMatrix.decide(low.score(), "close")));
 
     checks.add(check(
-        "agent-disagreement-escalates",
-        "When the agent disagrees with a low rule score, the alert must go to a human",
-        policyMatrix.decide(low.score(), "escalate") == AfcPolicyPath.REVIEW_ON_DISAGREEMENT,
-        "agent=escalate -> " + policyMatrix.decide(low.score(), "escalate")));
+        "agent-output-does-not-change-low-risk-route",
+        "Closing, escalating, missing, or malformed agent output cannot bypass investigator review",
+        policyMatrix.decide(low.score(), "close") == AfcPolicyPath.HUMAN_REVIEW_REQUIRED
+            && policyMatrix.decide(low.score(), "escalate") == AfcPolicyPath.HUMAN_REVIEW_REQUIRED
+            && policyMatrix.decide(low.score(), null) == AfcPolicyPath.HUMAN_REVIEW_REQUIRED
+            && policyMatrix.decide(low.score(), "garbage") == AfcPolicyPath.HUMAN_REVIEW_REQUIRED,
+        "all tested recommendations require investigator review"));
 
     boolean deterministic = true;
     AfcPreScreenResult first = ruleEngine.screen(highRisk);

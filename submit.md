@@ -25,8 +25,8 @@ routing on its own. Our pipeline separates the two:
 2. **Advisory LLM triage:** the model sees a redacted alert, returns a
    recommendation and rationale; malformed output degrades to "escalate".
 3. **Deterministic policy gate:** score ≥ 70 → mandatory human review;
-   ≥ 40 → review with advisory; below → auto-close only when the agent
-   agrees. The agent can add oversight, never remove it.
+   ≥ 40 → review with advisory; below → an investigator still records the
+   disposition. Agent output never closes an alert.
 4. **Human review (mi-11):** decision, rationale, reviewer recorded.
 5. **Evidence pack:** per-instance PDF with rule hits, agent rationale, gate
    decision, policy citation, token usage, and control coverage.
@@ -37,7 +37,7 @@ routing on its own. Our pipeline separates the two:
 |---|---|---|---|
 | High: structuring + PEP + sanctions near-match | 85 | escalate | **MANDATORY_REVIEW** |
 | Medium: structuring + velocity | 50 | close | **REVIEW_WITH_ADVISORY** (agent cannot close) |
-| Low: single small card transaction | 0 | close | **AUTO_CLOSE_ALLOWED** |
+| Low: single small card transaction | 0 | close | **HUMAN_REVIEW_REQUIRED** |
 
 The middle row is the point: a plausible agent recommendation still cannot
 skip human review.
@@ -85,8 +85,8 @@ OpenAI-compatible endpoint, `npm run dev`, open the AML Alert Triage panel.
 
 1. Problem: alert volume, false positives, SAR deadlines, four-eyes.
 2. Architecture: CALM model, four FINOS projects, gate outside the agent.
-3. Live: high risk → mandatory review; medium → agent says close, policy
-   still reviews; low → auto-close.
+3. Live: high risk → mandatory review; medium and low → even if the agent
+   says close, an investigator still records the disposition.
 4. Complete the human task, open the evidence PDF, show control coverage.
 5. Close: same steel thread, new regulated use case, agent cannot reduce
    oversight.

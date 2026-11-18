@@ -23,7 +23,7 @@ Source: `finos/common-cloud-controls`, `catalogs/ai-ml/gen-ai/controls.yaml`
 | `CCC.GenAI.CN02` | Model Output Filtering and Sanitisation | Strict JSON parse, lenient field extraction, then safe default to `escalate` |
 | `CCC.GenAI.CN06` | Least Privilege for Plugins | The triage agent may call only three read-only tools (`customerProfile`, `sanctionsScreening`, `transactionStats`); every call is recorded in the evidence pack |
 | `CCC.GenAI.CN07` | Model Version Pinning | Endpoint and model are fixed by deployment config and recorded per instance |
-| `CCC.GenAI.CN08` | Quality Control and Red Teaming | Deterministic policy invariants in `AfcRuleEngineTest`; auto-closed alerts are sampled for QA |
+| `CCC.GenAI.CN08` | Quality Control and Red Teaming | Deterministic policy invariants in `AfcRuleEngineTest`; every score band requires human disposition |
 
 ## AIGF controls used
 
