@@ -4,6 +4,8 @@
 
 **Team:** Saketh Cherukuri ([@ssaketh-ch](https://github.com/ssaketh-ch)) · Sai Sravan Cherukuri ([@saisravan909](https://github.com/saisravan909))
 
+**Walkthrough video (58 s):** [docs/media/omicron-walkthrough.mp4](docs/media/omicron-walkthrough.mp4)
+
 ## The pitch
 
 Loan approval proved the FINOS AI Steel Thread works. This submission proves it
