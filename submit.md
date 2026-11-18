@@ -103,7 +103,7 @@ OpenAI-compatible endpoint, `npm run dev`, open the AML Alert Triage panel.
 ## Verification
 
 - CALM validation: `npx @finos/calm-cli validate -a architecture/afc-alert-triage.calm.json -u architecture/url-to-local-file-mapping.json` reports no errors and no warnings.
-- Fresh clone of `main`: app packages, 13 unit tests pass (`AfcRuleEngineTest`, `AfcTriageParsingTest`), and the frontend builds (`npm ci && npm run build`).
+- Fresh clone of `main`: app packages, 14 unit tests pass (`AfcRuleEngineTest`, `AfcTriageParsingTest`), and the frontend builds (`npm ci && npm run build`).
 
 ## Attribution
 

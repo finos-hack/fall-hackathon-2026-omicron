@@ -53,13 +53,13 @@ Open the UI, use the **AML Alert Triage** panel, and pick a preset (low / medium
 
 ## Verified locally (2026-11-13)
 
-- `mvn -B -Dtest='AfcRuleEngineTest,AfcTriageParsingTest' test` → 13 tests pass (8 policy invariants, 5 parse-fallback cases).
+- `mvn -B -Dtest='AfcRuleEngineTest,AfcTriageParsingTest' test` → 14 tests pass (9 policy invariants, 5 parse-fallback cases).
 - `GET /api/afc/acceptance-tests` → 5/5 deterministic checks pass.
 - Live runs: score 85 → MANDATORY_REVIEW; score 50 with agent "close" → REVIEW_WITH_ADVISORY; score 0 with agent "close" → HUMAN_REVIEW_REQUIRED.
 - Evidence PDF includes rule hits, agent tools used, policy citation, reviewer, and control coverage.
 - Tokenomics records each triage call (example: 1 call, 351 tokens, $0 local inference).
 - CALM validation: `npx @finos/calm-cli validate -a architecture/afc-alert-triage.calm.json -u architecture/url-to-local-file-mapping.json` → 0 errors, 0 warnings.
-- Fresh clone of `main`: `mvn -DskipTests package`, 13 tests, and `npm ci && npm run build` all pass.
+- Fresh clone of `main`: `mvn -DskipTests package`, 14 tests, and `npm ci && npm run build` all pass.
 
 ## Rubric mapping
 
